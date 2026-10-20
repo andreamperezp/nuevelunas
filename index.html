@@ -2,7 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F4F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17121B" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nueve Lunas">
 <meta name="description" content="Acompañante de control prenatal: exámenes infaltables por trimestre, preguntas para cada consulta y señales de alarma.">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Nueve Lunas</title>
@@ -49,7 +54,9 @@
   --danger: #F2786E; --danger-soft: #3D1C1A; --info-soft: #222A3D; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; overflow-wrap: break-word; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.wrap { overflow-x: clip; }
 .wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; display: flex; flex-direction: column; gap: 18px; }
 h1, h2, h3 { text-wrap: balance; margin: 0; }
 p { margin: 0; }
@@ -92,17 +99,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg input:checked + span { font-weight: 600; }
 .seg label:has(input:checked) { background: var(--accent-soft); color: var(--accent); }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-input[type="date"], input[type="text"], textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-width: 0; }
+/* 16px evita el zoom automático de iOS al enfocar un campo */
+input[type="date"], input[type="text"], textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-width: 0; max-width: 100%; font-size: 16px; min-height: 44px; }
+input[type="date"] { -webkit-appearance: none; appearance: none; display: block; width: 100%; line-height: 1.3; }
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+.row input[type="date"] { flex: 1 1 170px; width: auto; }
+[aria-invalid="true"] { border-color: var(--danger) !important; box-shadow: 0 0 0 1px var(--danger); }
+.ferr { font-size: 12.5px; color: var(--danger); }
 .hint { font-size: 13px; color: var(--muted); }
 .err { font-size: 13px; color: var(--danger); }
 
-.btn { border: 0; border-radius: 10px; padding: 9px 14px; font-weight: 600; cursor: pointer; background: var(--accent); color: var(--surface); }
+.btn { border: 0; border-radius: 10px; padding: 9px 14px; min-height: 44px; font-weight: 600; cursor: pointer; background: var(--accent); color: var(--surface); }
 .btn.ghost { background: transparent; color: var(--accent); border: 1px solid currentColor; }
-.btn.small { padding: 5px 10px; font-size: 13px; }
+.btn.small { padding: 5px 12px; font-size: 13px; min-height: 36px; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; cursor: pointer; font-size: 13px; }
 
 .tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); display: flex; gap: 4px; padding-block: 6px; overflow-x: auto; scrollbar-width: none; }
-.tabs button { flex: 1 0 auto; background: none; border: 0; padding: 9px 12px; border-radius: 10px; font-weight: 600; color: var(--muted); cursor: pointer; font-size: 14px; }
+.tabs button { flex: 1 0 auto; min-height: 40px; background: none; border: 0; padding: 9px 12px; border-radius: 10px; font-weight: 600; color: var(--muted); cursor: pointer; font-size: 14px; }
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 0 var(--line), 0 0 0 1px var(--line); }
 .tabs button.alarm { color: var(--danger); }
 
@@ -122,7 +135,7 @@ input[type="date"], input[type="text"], textarea { background: var(--bg); border
 .item:first-child { border-top: 0; }
 .item-head { display: flex; gap: 10px; align-items: flex-start; }
 .item-head input[type="checkbox"] { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--accent); flex: none; cursor: pointer; }
-.item-title { flex: 1; min-width: 0; font-weight: 500; }
+.item-title { flex: 1; min-width: 0; font-weight: 500; overflow-wrap: anywhere; cursor: pointer; }
 .item.is-done .item-title, .item.is-na .item-title { color: var(--muted); }
 .item.is-done .item-title { text-decoration: line-through; text-decoration-color: var(--line); }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: 30px; }
@@ -157,9 +170,10 @@ input[type="date"], input[type="text"], textarea { background: var(--bg); border
 .box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .box ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .addq { display: flex; gap: 8px; }
-.addq input { flex: 1; }
-.del { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; }
-.copyout { width: 100%; min-height: 180px; font-size: 13px; }
+.addq input { flex: 1 1 auto; width: auto; }
+.addq .btn { flex: none; }
+.del { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1; min-width: 36px; min-height: 36px; margin: -8px -8px -8px 0; }
+.copyout { width: 100%; min-height: 180px; }
 
 .alarm-box { background: var(--danger-soft); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .alarm-box h2 { color: var(--danger); font-family: var(--font-display); font-weight: 400; font-size: 26px; }
@@ -211,10 +225,10 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
           <label><input type="radio" name="mode" value="fpp" id="modeFpp"><span>Fecha probable de parto</span></label>
         </div>
         <div class="row">
-          <input type="date" id="dateInput" aria-label="Fecha" required>
+          <input type="date" id="dateInput" aria-label="Fecha" aria-describedby="dateErr" required>
           <button class="btn" type="submit">Guardar</button>
         </div>
-        <p class="err" id="dateErr" hidden></p>
+        <p class="err" id="dateErr" role="alert" hidden></p>
         <p class="hint">Si en la ecografía del primer trimestre te dieron otra fecha probable de parto, usa esa: es más precisa que la FUM. La fecha probable se calcula sumando 280 días (40 semanas) a la FUM.</p>
       </form>
     </details>
@@ -381,10 +395,26 @@ function fmt(d) { return d.toLocaleDateString("es", { day: "numeric", month: "lo
 function triOf(w) { return w < 14 ? 1 : w < 28 ? 2 : 3; }
 
 function blank() { return { v: 1, fum: null, exams: {}, asked: {}, mine: [] }; }
+const NOTE_MAX = 200, Q_MAX = 300, Q_LIMIT = 60;
+const EXAM_IDS = new Set(EXAMS.map(e => e.id));
+function cleanExams(src) {
+  const out = {};
+  if (!src || typeof src !== "object") return out;
+  for (const [id, r] of Object.entries(src)) {
+    if (!EXAM_IDS.has(id) || !r || typeof r !== "object") continue;
+    out[id] = { done: r.done === true, na: r.na === true, date: parseISO(r.date) ? r.date : "", note: typeof r.note === "string" ? r.note.slice(0, NOTE_MAX) : "" };
+  }
+  return out;
+}
 function normalize(s) {
   const b = blank();
   if (!s || typeof s !== "object") return b;
-  return { v: 1, fum: parseISO(s.fum) ? s.fum : null, exams: s.exams && typeof s.exams === "object" ? s.exams : {}, asked: s.asked && typeof s.asked === "object" ? s.asked : {}, mine: Array.isArray(s.mine) ? s.mine.filter(m => m && m.t) : [] };
+  const asked = {};
+  if (s.asked && typeof s.asked === "object") for (const k of Object.keys(s.asked)) if (/^[1-4]-\d{1,2}$/.test(k) && s.asked[k] === true) asked[k] = true;
+  const mine = Array.isArray(s.mine) ? s.mine
+    .filter(m => m && typeof m.t === "string" && m.t.trim() && typeof m.id === "string" && /^[\w-]{1,40}$/.test(m.id))
+    .slice(0, Q_LIMIT).map(m => ({ id: m.id, t: m.t.trim().slice(0, Q_MAX), done: m.done === true })) : [];
+  return { v: 1, fum: parseISO(s.fum) ? s.fum : null, exams: cleanExams(s.exams), asked, mine };
 }
 function makeExample() {
   const t = today();
@@ -489,9 +519,10 @@ function examRow(ex, ctx, g) {
         <p class="why">${esc(ex.why)}</p>
         ${ex.prep ? `<p><b>Cómo prepararte:</b> ${esc(ex.prep)}</p>` : ""}
         <div class="fields">
-          <label>Fecha en que lo hice<input type="date" id="${ctx}-date-${ex.id}" data-act="date" value="${esc(rec.date || "")}"></label>
-          <label>Resultado o nota<input type="text" id="${ctx}-note-${ex.id}" data-act="note" value="${esc(rec.note || "")}" placeholder="Ej.: normal, me pidieron repetirlo…"></label>
+          <label>Fecha en que lo hice<input type="date" id="${ctx}-date-${ex.id}" data-act="date" value="${esc(rec.date || "")}" max="${toISO(today())}" min="${toISO(addDays(g.fum, -90))}"></label>
+          <label>Resultado o nota<input type="text" id="${ctx}-note-${ex.id}" data-act="note" maxlength="${NOTE_MAX}" value="${esc(rec.note || "")}" placeholder="Ej.: normal, me pidieron repetirlo…"></label>
         </div>
+        <p class="ferr" data-err hidden></p>
         <div><button type="button" class="linkbtn" data-act="na">${rec.na ? "Sí me corresponde" : "No me corresponde"}</button></div>
       </div>
     </details>
@@ -607,7 +638,8 @@ function renderConsulta(g) {
     <div class="block">
       <h2>Mis propias preguntas</h2>
       <p class="sub">Anota dudas apenas aparezcan. En la consulta es fácil olvidarlas.</p>
-      <form class="addq" id="addQ"><input type="text" id="newQ" placeholder="Escribe una duda…" aria-label="Nueva pregunta" maxlength="300"><button class="btn" type="submit">Agregar</button></form>
+      <form class="addq" id="addQ" novalidate><input type="text" id="newQ" placeholder="Escribe una duda…" aria-label="Nueva pregunta" aria-describedby="newQErr" maxlength="${Q_MAX}" autocomplete="off" enterkeyhint="done"><button class="btn" type="submit">Agregar</button></form>
+      <p class="ferr" id="newQErr" role="alert" hidden></p>
       ${s.mine.length ? `<div class="list">${s.mine.map(m => `<div class="item ${m.done ? "is-done" : ""}"><div class="item-head">
         <input type="checkbox" id="mine-${esc(m.id)}" data-mine="${esc(m.id)}" ${m.done ? "checked" : ""}>
         <label class="item-title" for="mine-${esc(m.id)}">${esc(m.t)}</label>
@@ -667,6 +699,29 @@ function setTab(t, remember = true) {
   if (remember) try { localStorage.setItem(KEY + "-tab", t); } catch (e) {}
 }
 
+// Validaciones
+function examDateError(v) {
+  if (!v) return "";
+  const d = parseISO(v);
+  if (!d) return "Esa fecha no es válida. Elígela en el calendario.";
+  if (d > today()) return "La fecha no puede ser futura.";
+  if (d < addDays(parseISO(cur().fum), -90)) return "Esa fecha es muy anterior a tu embarazo. Revisa el año.";
+  return "";
+}
+function dateLimits(fpp) {
+  const t = today(), shift = fpp ? 280 : 0;
+  return { min: toISO(addDays(t, -44 * 7 + shift)), max: toISO(addDays(t, -14 + shift)) };
+}
+function applyDateLimits() {
+  const l = dateLimits($("#modeFpp").checked);
+  $("#dateInput").min = l.min; $("#dateInput").max = l.max;
+}
+function showDateErr(msg) {
+  const err = $("#dateErr");
+  err.textContent = msg; err.hidden = !msg;
+  $("#dateInput").setAttribute("aria-invalid", msg ? "true" : "false");
+}
+
 // Eventos
 document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (b) setTab(b.dataset.tab); });
 
@@ -674,7 +729,14 @@ document.querySelector("main").addEventListener("change", e => {
   const el = e.target;
   const row = el.closest("[data-exam]");
   if (row && el.dataset.act === "done") { setRec(row.dataset.exam, { done: el.checked, date: el.checked && !recOf(row.dataset.exam).date ? toISO(today()) : recOf(row.dataset.exam).date }); render(); return; }
-  if (row && el.dataset.act === "date") { setRec(row.dataset.exam, { date: el.value }); return; }
+  if (row && el.dataset.act === "date") {
+    const errEl = el.closest(".more-body")?.querySelector("[data-err]");
+    const msg = examDateError(el.value);
+    el.setAttribute("aria-invalid", msg ? "true" : "false");
+    if (errEl) { errEl.textContent = msg; errEl.hidden = !msg; }
+    if (!msg) setRec(row.dataset.exam, { date: el.value });
+    return;
+  }
   if (el.dataset.q) { const s = cur(); if (el.checked) s.asked[el.dataset.q] = true; else delete s.asked[el.dataset.q]; persist(); render(); return; }
   if (el.dataset.mine) { const m = cur().mine.find(x => x.id === el.dataset.mine); if (m) { m.done = el.checked; persist(); render(); } }
 });
@@ -682,6 +744,8 @@ document.querySelector("main").addEventListener("input", e => {
   const el = e.target, row = el.closest("[data-exam]");
   if (row && el.dataset.act === "note") {
     const s = cur(); s.exams[row.dataset.exam] = Object.assign({}, s.exams[row.dataset.exam], { note: el.value });
+    if (el.value.length > NOTE_MAX) el.value = el.value.slice(0, NOTE_MAX);
+    s.exams[row.dataset.exam].note = el.value;
     document.querySelectorAll(`[data-exam="${row.dataset.exam}"] [data-act="note"]`).forEach(o => { if (o !== el) o.value = el.value; });
     persist();
   }
@@ -707,25 +771,42 @@ document.querySelector("main").addEventListener("click", async e => {
 document.querySelector("main").addEventListener("submit", e => {
   if (e.target.id !== "addQ") return;
   e.preventDefault();
-  const v = $("#newQ").value.trim(); if (!v) return;
+  const input = $("#newQ"), err = $("#newQErr");
+  const v = input.value.replace(/\s+/g, " ").trim();
+  const fail = msg => { err.textContent = msg; err.hidden = false; input.setAttribute("aria-invalid", "true"); input.focus(); };
+  if (!v) return fail("Escribe tu pregunta antes de agregarla.");
+  if (v.length < 3) return fail("La pregunta es muy corta.");
+  if (v.length > Q_MAX) return fail(`Máximo ${Q_MAX} caracteres.`);
+  if (cur().mine.some(m => m.t.toLowerCase() === v.toLowerCase())) return fail("Ya tienes esa pregunta en tu lista.");
+  if (cur().mine.length >= Q_LIMIT) return fail(`Llegaste al máximo de ${Q_LIMIT} preguntas. Borra las que ya respondiste.`);
   cur().mine.push({ id: "m" + Date.now().toString(36), t: v, done: false });
   persist(); render();
   setTimeout(() => $("#newQ")?.focus(), 0);
 });
 
-$("#startBtn").addEventListener("click", () => { $("#dataPanel").open = true; $("#dateInput").value = ""; $("#dateInput").focus(); });
+document.querySelector("main").addEventListener("input", e => {
+  if (e.target.id === "newQ") { $("#newQErr").hidden = true; e.target.setAttribute("aria-invalid", "false"); }
+});
+$("#startBtn").addEventListener("click", () => { $("#dataPanel").open = true; $("#dateInput").value = ""; showDateErr(""); $("#dateInput").focus(); });
+$("#dateInput").addEventListener("input", () => showDateErr(""));
 document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", () => {
+  applyDateLimits(); showDateErr("");
   if (!isExample()) $("#dateInput").value = $("#modeFpp").checked ? toISO(gest().fpp) : state.fum;
 }));
+applyDateLimits();
 $("#dateForm").addEventListener("submit", e => {
   e.preventDefault();
-  const err = $("#dateErr"); err.hidden = true;
-  const d = parseISO($("#dateInput").value);
-  if (!d) { err.textContent = "Elige una fecha en el calendario."; err.hidden = false; return; }
-  const fum = $("#modeFpp").checked ? addDays(d, -280) : d;
+  showDateErr("");
+  const raw = $("#dateInput").value, fppMode = $("#modeFpp").checked;
+  if (!raw) return showDateErr(fppMode ? "Ingresa tu fecha probable de parto." : "Ingresa la fecha del primer día de tu última regla.");
+  const d = parseISO(raw);
+  if (!d) return showDateErr("Esa fecha no es válida. Elígela en el calendario.");
+  const fum = fppMode ? addDays(d, -280) : d;
   const days = Math.round((today() - fum) / DAY);
-  if (days < 14) { err.textContent = $("#modeFpp").checked ? "Esa fecha probable de parto está demasiado lejos. Revisa el año." : "La fecha de tu última regla no puede ser futura ni de hace menos de 2 semanas."; err.hidden = false; return; }
-  if (days > 44 * 7) { err.textContent = "Con esa fecha estarías en más de 44 semanas. Revisa el día y el año."; err.hidden = false; return; }
+  if (!fppMode && d > today()) return showDateErr("La fecha de tu última regla no puede ser futura.");
+  if (fppMode && d < today() && days > 44 * 7) return showDateErr("Esa fecha probable de parto ya pasó hace más de 4 semanas. Revisa el año.");
+  if (days < 14) return showDateErr(fppMode ? "Con esa fecha estarías en menos de 2 semanas de embarazo. Revisa el año." : "Con esa fecha estarías en menos de 2 semanas de embarazo. Revisa el día y el año.");
+  if (days > 44 * 7) return showDateErr("Con esa fecha estarías en más de 44 semanas. Revisa el día y el año.");
   const wasExample = isExample();
   state.fum = toISO(fum);
   persist();
