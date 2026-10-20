@@ -12,7 +12,7 @@ Acompañante digital de control prenatal para la madre gestante que no sabe por 
 
 ## Cómo usarla
 
-Es una sola página sin dependencias de compilación: abre `index.html` en el navegador. Los datos se guardan en el navegador de cada usuaria (`localStorage`).
+Es una sola página sin dependencias de compilación: abre `index.html` en el navegador. Sin cuenta, los datos se guardan en el navegador (`localStorage`). Con "Mi cuenta" (enlace por correo) se guardan en Supabase, en la tabla `planes`, protegida con RLS para que cada usuaria solo vea su propio plan.
 
 Para publicarla gratis: en GitHub, **Settings → Pages → Deploy from branch → main / root**.
 

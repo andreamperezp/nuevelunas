@@ -182,6 +182,12 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 .alarm-list li b { font-weight: 600; }
 .alarm-list li span { font-size: 13.5px; color: var(--muted); }
 
+.top-r { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.account { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.account form { display: flex; gap: 8px; flex-wrap: wrap; }
+.account input[type="email"] { flex: 1 1 220px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-width: 0; font-size: 16px; min-height: 44px; }
+.account .ok { color: var(--ok); }
+
 footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; max-width: 70ch; }
 
 @media (max-width: 520px) {
@@ -200,8 +206,26 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
 <div class="wrap">
   <header class="top">
     <div class="brand">Nueve <em>Lunas</em></div>
-    <span class="save" id="saveLabel" data-k="example">Modo ejemplo</span>
+    <div class="top-r">
+      <span class="save" id="saveLabel" data-k="example">Modo ejemplo</span>
+      <button class="linkbtn" type="button" id="accountBtn" aria-expanded="false" aria-controls="accountPanel">Mi cuenta</button>
+    </div>
   </header>
+
+  <section class="account" id="accountPanel" hidden>
+    <div id="authOut">
+      <p><b>Guarda tu seguimiento en la nube</b> para no perderlo si cambias o pierdes el celular. Escribe tu correo y te enviaremos un enlace para entrar, sin contraseña.</p>
+      <form id="authForm" novalidate>
+        <input type="email" id="authEmail" placeholder="tu@correo.com" aria-label="Correo electrónico" aria-describedby="authMsg" autocomplete="email" inputmode="email" maxlength="254" required>
+        <button class="btn" type="submit" id="authSend">Enviarme el enlace</button>
+      </form>
+    </div>
+    <div id="authIn" hidden>
+      <p>Entraste como <b id="authWho"></b>. Tus datos se guardan en tu cuenta y los puedes ver desde cualquier dispositivo.</p>
+      <div><button class="btn ghost small" type="button" id="authOutBtn">Cerrar sesión</button></div>
+    </div>
+    <p class="hint" id="authMsg" role="status"></p>
+  </section>
 
   <div class="banner" id="exampleBanner">
     <p><b>Estás viendo un ejemplo</b> de una mamá en la semana 22. Ingresa la fecha de tu última regla (o tu fecha probable de parto) para empezar tu propio seguimiento.</p>
@@ -270,6 +294,7 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--lin
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const EXAMS = [
   // Primer trimestre
@@ -431,7 +456,11 @@ function makeExample() {
 let state = blank();
 try { const raw = localStorage.getItem(KEY); if (raw) state = normalize(JSON.parse(raw)); } catch (e) {}
 let exampleState = makeExample();
-let backend = "local", docRef = null, saveTimer = null, chain = Promise.resolve();
+let backend = "local", uid = null, saveTimer = null, chain = Promise.resolve();
+// La clave publicable es pública por diseño: la seguridad la dan las políticas RLS de la tabla "planes".
+const SB_URL = "https://lpfdqvhimejxgjrqqhlx.supabase.co";
+const SB_KEY = "sb_publishable_YFa2X6X9iEam_5ilXhHmCw_uKT4kCOG";
+const sb = window.supabase?.createClient ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 const isExample = () => !state.fum;
 const cur = () => isExample() ? exampleState : state;
 
@@ -461,36 +490,69 @@ function setSaveLabel() {
   const el = $("#saveLabel");
   if (isExample()) { el.dataset.k = "example"; el.textContent = "Modo ejemplo · no se guarda"; }
   else if (backend === "cloud") { el.dataset.k = "cloud"; el.textContent = "Guardado en tu cuenta"; }
+  else if (backend === "error") { el.dataset.k = "local"; el.textContent = "Sin conexión · guardado en este dispositivo"; }
   else { el.dataset.k = "local"; el.textContent = "Guardado solo en este dispositivo"; }
+}
+
+function cloudSave() {
+  if (!sb || !uid) return;
+  const body = { user_id: uid, data: JSON.parse(JSON.stringify(state)), updated_at: new Date().toISOString() };
+  chain = chain.then(async () => {
+    const { error } = await sb.from("planes").upsert(body);
+    backend = error ? "error" : "cloud";
+    setSaveLabel();
+  });
 }
 
 function persist() {
   if (isExample()) return;
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
-  if (backend === "cloud" && docRef) {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      const body = JSON.parse(JSON.stringify(state));
-      chain = chain.then(() => docRef.set(body)).catch(() => { backend = "local"; setSaveLabel(); });
-    }, 700);
-  }
+  if (uid) { clearTimeout(saveTimer); saveTimer = setTimeout(cloudSave, 700); }
   setSaveLabel();
+}
+// Si se cierra la pestaña con un guardado pendiente, mandarlo ya
+addEventListener("pagehide", () => { if (saveTimer && uid) { clearTimeout(saveTimer); saveTimer = null; cloudSave(); } });
+
+async function onSignedIn(user) {
+  if (uid === user.id) return;
+  uid = user.id;
+  $("#authWho").textContent = user.email || "";
+  $("#authOut").hidden = true; $("#authIn").hidden = false;
+  try {
+    const { data, error } = await sb.from("planes").select("data").eq("user_id", uid).maybeSingle();
+    if (error) throw error;
+    backend = "cloud";
+    const remote = data ? normalize(data.data) : null;
+    // La nube manda; si la cuenta está vacía, sube lo que ya había en este dispositivo
+    if (remote?.fum) { state = remote; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    else if (state.fum) cloudSave();
+  } catch (e) { backend = "error"; }
+  render();
+}
+
+function onSignedOut() {
+  uid = null; backend = "local";
+  $("#authOut").hidden = false; $("#authIn").hidden = true;
 }
 
 async function initCloud() {
-  if (!window.claude?.use) return;
-  try {
-    const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
-    if (!db || !user) return;
-    const uid = await user.id();
-    if (!uid) return;
-    docRef = db.doc("data/users/" + uid + "/plan");
-    const snap = await docRef.get();
-    backend = "cloud";
-    if (snap.exists) { state = normalize(JSON.parse(JSON.stringify(snap.data()))); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
-    else if (state.fum) persist();
-    render();
-  } catch (e) { backend = "local"; setSaveLabel(); }
+  if (!sb) return;
+  sb.auth.onAuthStateChange((ev, session) => {
+    if (session?.user) setTimeout(() => onSignedIn(session.user), 0);
+    else if (ev === "SIGNED_OUT") { onSignedOut(); render(); }
+  });
+  const { data } = await sb.auth.getSession();
+  if (data.session?.user) onSignedIn(data.session.user);
+  else if (/error_description=/.test(location.hash)) {
+    showAccount(true);
+    $("#authMsg").textContent = "El enlace expiró o ya se usó. Pide uno nuevo.";
+    history.replaceState(null, "", location.pathname);
+  }
+}
+
+function showAccount(open) {
+  $("#accountPanel").hidden = !open;
+  $("#accountBtn").setAttribute("aria-expanded", String(open));
 }
 
 function recOf(id) { return cur().exams[id] || {}; }
@@ -813,6 +875,31 @@ $("#dateForm").addEventListener("submit", e => {
   render();
   if (wasExample) { setTab("ahora"); }
   $("#dataPanel").open = false;
+});
+
+$("#accountBtn").addEventListener("click", () => showAccount($("#accountPanel").hidden));
+$("#authForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const input = $("#authEmail"), msg = $("#authMsg"), btn = $("#authSend");
+  const email = input.value.trim().toLowerCase();
+  input.setAttribute("aria-invalid", "false");
+  if (!sb) { msg.textContent = "No se pudo conectar con el servidor. Revisa tu internet y recarga la página."; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { input.setAttribute("aria-invalid", "true"); msg.textContent = "Escribe un correo válido, por ejemplo nombre@gmail.com."; input.focus(); return; }
+  btn.disabled = true; msg.textContent = "Enviando…";
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+  btn.disabled = false;
+  if (error) msg.textContent = /rate|limit|seconds/i.test(error.message) ? "Ya pedimos varios enlaces seguidos. Espera unos minutos e inténtalo de nuevo." : "No pudimos enviar el enlace. Inténtalo de nuevo en un momento.";
+  else msg.innerHTML = `<span class="ok">Listo. Revisa tu correo (${esc(email)}) y abre el enlace en este mismo teléfono.</span> Si no llega, mira en spam.`;
+});
+$("#authOutBtn").addEventListener("click", async () => {
+  clearTimeout(saveTimer);
+  await chain;
+  await sb.auth.signOut();
+  // En un teléfono compartido no queda nada a la vista al salir
+  state = blank();
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  $("#authMsg").textContent = "Cerraste sesión. Tus datos siguen guardados en tu cuenta.";
+  render();
 });
 
 render();
