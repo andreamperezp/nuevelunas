@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Acompañante de control prenatal: exámenes infaltables por trimestre, preguntas para cada consulta y señales de alarma.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Nueve Lunas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una columna tipo libreta de control, encabezada por la semana gestacional como dato protagonista; pestañas fijas para pasar de "lo que toca hoy" al detalle. */
+:root {
+  --bg: #F6F4F8;
+  --surface: #FFFFFF;
+  --ink: #241A2B;
+  --muted: #6B6274;
+  --line: #E4DEE9;
+  --accent: #8E2F5E;
+  --accent-soft: #F5E4ED;
+  --t1: #3F7D60;
+  --t2: #8E2F5E;
+  --t3: #3F5A9C;
+  --ok: #2F7D4F;
+  --ok-soft: #E3F2E8;
+  --warn: #9A5200;
+  --warn-soft: #FBEEDC;
+  --danger: #B42318;
+  --danger-soft: #FDE8E6;
+  --info-soft: #E8EDF8;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17121B; --surface: #211A27; --ink: #F1EBF4; --muted: #A99FB2; --line: #372D3E;
+    --accent: #E784B3; --accent-soft: #3A2233; --t1: #7DBE9C; --t2: #E784B3; --t3: #93A9E8;
+    --ok: #6CC08E; --ok-soft: #1D3226; --warn: #EBAA52; --warn-soft: #3A2A14;
+    --danger: #F2786E; --danger-soft: #3D1C1A; --info-soft: #222A3D; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17121B; --surface: #211A27; --ink: #F1EBF4; --muted: #A99FB2; --line: #372D3E;
+  --accent: #E784B3; --accent-soft: #3A2233; --t1: #7DBE9C; --t2: #E784B3; --t3: #93A9E8;
+  --ok: #6CC08E; --ok-soft: #1D3226; --warn: #EBAA52; --warn-soft: #3A2A14;
+  --danger: #F2786E; --danger-soft: #3D1C1A; --info-soft: #222A3D; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; display: flex; flex-direction: column; gap: 18px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-size: 28px; line-height: 1; }
+.brand em { color: var(--accent); }
+.save { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.save::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.save[data-k="cloud"]::before { background: var(--ok); }
+.save[data-k="local"]::before { background: var(--warn); }
+
+.banner { background: var(--info-soft); border-radius: var(--radius); padding: 12px 14px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 14px; }
+.banner p { flex: 1 1 260px; min-width: 0; }
+
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 20px 18px; display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--tri, var(--accent)); }
+.week { font-family: var(--font-display); font-weight: 400; font-size: clamp(44px, 11vw, 68px); line-height: .95; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.week small { font-size: .45em; color: var(--muted); letter-spacing: 0; }
+.meta { color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
+.meta b { color: var(--ink); font-weight: 600; }
+
+.tl { position: relative; padding-top: 22px; }
+.tl-bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; gap: 2px; }
+.tl-bar span { display: block; height: 100%; opacity: .28; }
+.tl-bar span.on { opacity: 1; }
+.tl-fill { position: absolute; left: 0; top: 22px; height: 10px; border-radius: 99px; }
+.tl-now { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: var(--ink); white-space: nowrap; display: flex; flex-direction: column; align-items: center; }
+.tl-now::after { content: ""; width: 2px; height: 16px; background: var(--ink); margin-top: 1px; }
+.tl-ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+.datapanel { border-top: 1px dashed var(--line); padding-top: 10px; }
+.datapanel summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accent); }
+.datapanel form { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap; }
+.seg label { padding: 6px 10px; border-radius: 8px; font-size: 13.5px; cursor: pointer; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg input:checked + span { font-weight: 600; }
+.seg label:has(input:checked) { background: var(--accent-soft); color: var(--accent); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+input[type="date"], input[type="text"], textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-width: 0; }
+.hint { font-size: 13px; color: var(--muted); }
+.err { font-size: 13px; color: var(--danger); }
+
+.btn { border: 0; border-radius: 10px; padding: 9px 14px; font-weight: 600; cursor: pointer; background: var(--accent); color: var(--surface); }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid currentColor; }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; cursor: pointer; font-size: 13px; }
+
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); display: flex; gap: 4px; padding-block: 6px; overflow-x: auto; scrollbar-width: none; }
+.tabs button { flex: 1 0 auto; background: none; border: 0; padding: 9px 12px; border-radius: 10px; font-weight: 600; color: var(--muted); cursor: pointer; font-size: 14px; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 0 var(--line), 0 0 0 1px var(--line); }
+.tabs button.alarm { color: var(--danger); }
+
+.panel { display: flex; flex-direction: column; gap: 22px; }
+.block { display: flex; flex-direction: column; gap: 10px; }
+.block > h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.1; }
+.block > .sub { color: var(--muted); font-size: 14px; margin-top: -4px; }
+.empty { color: var(--muted); font-size: 14px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: var(--radius); }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+.stat b { display: block; font-family: var(--font-display); font-size: 30px; font-weight: 400; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.item { padding: 12px 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+.item:first-child { border-top: 0; }
+.item-head { display: flex; gap: 10px; align-items: flex-start; }
+.item-head input[type="checkbox"] { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--accent); flex: none; cursor: pointer; }
+.item-title { flex: 1; min-width: 0; font-weight: 500; }
+.item.is-done .item-title, .item.is-na .item-title { color: var(--muted); }
+.item.is-done .item-title { text-decoration: line-through; text-decoration-color: var(--line); }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: 30px; }
+.win { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pill { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; letter-spacing: .02em; }
+.st-now { background: var(--accent-soft); color: var(--accent); }
+.st-late { background: var(--warn-soft); color: var(--warn); }
+.st-soon { background: var(--info-soft); color: var(--t3); }
+.st-done { background: var(--ok-soft); color: var(--ok); }
+.st-na, .st-later { background: var(--bg); color: var(--muted); }
+.more { margin-left: 30px; }
+.more summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; list-style: none; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: "+ "; }
+.more[open] summary::before { content: "− "; }
+.more-body { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; font-size: 14px; }
+.more-body .why { color: var(--muted); max-width: 62ch; }
+.fields { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
+.fields label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); min-width: 0; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.contact { font-size: 13px; padding: 5px 11px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-variant-numeric: tabular-nums; }
+.contact.past { color: var(--muted); background: transparent; text-decoration: line-through; text-decoration-color: var(--line); }
+.contact.next { border-color: var(--accent); color: var(--accent); font-weight: 700; box-shadow: inset 0 0 0 1px var(--accent); }
+.chips button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
+.chips button[aria-pressed="true"] { border-color: var(--tri); color: var(--tri); font-weight: 600; background: var(--surface); box-shadow: inset 0 0 0 1px var(--tri); }
+
+.tri-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.tri-h h3 { font-family: var(--font-display); font-weight: 400; font-size: 21px; color: var(--tri); }
+.tri-h span { font-size: 13px; color: var(--muted); }
+
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.box ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.addq { display: flex; gap: 8px; }
+.addq input { flex: 1; }
+.del { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; }
+.copyout { width: 100%; min-height: 180px; font-size: 13px; }
+
+.alarm-box { background: var(--danger-soft); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.alarm-box h2 { color: var(--danger); font-family: var(--font-display); font-weight: 400; font-size: 26px; }
+.alarm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.alarm-list li { background: var(--surface); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.alarm-list li b { font-weight: 600; }
+.alarm-list li span { font-size: 13.5px; color: var(--muted); }
+
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; max-width: 70ch; }
+
+@media (max-width: 520px) {
+  .fields { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .stat b { font-size: 24px; }
+  .tabs button { padding: 8px 10px; font-size: 13.5px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tl-fill { transition: width .6s ease; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Nueve <em>Lunas</em></div>
+    <span class="save" id="saveLabel" data-k="example">Modo ejemplo</span>
+  </header>
+
+  <div class="banner" id="exampleBanner">
+    <p><b>Estás viendo un ejemplo</b> de una mamá en la semana 22. Ingresa la fecha de tu última regla (o tu fecha probable de parto) para empezar tu propio seguimiento.</p>
+    <button class="btn small" type="button" id="startBtn">Ingresar mi fecha</button>
+  </div>
+
+  <section class="hero" id="hero">
+    <div class="eyebrow" id="triLabel"></div>
+    <h1 class="week" id="weekBig"></h1>
+    <div class="meta" id="heroMeta"></div>
+    <div class="tl" aria-hidden="true">
+      <div class="tl-now" id="tlNow">Hoy</div>
+      <div class="tl-bar" id="tlBar"></div>
+      <div class="tl-ticks"><span>0</span><span>14</span><span>28</span><span>42 sem</span></div>
+    </div>
+    <details class="datapanel" id="dataPanel">
+      <summary>Mis fechas</summary>
+      <form id="dateForm" novalidate>
+        <div class="seg" role="radiogroup" aria-label="Calcular desde">
+          <label><input type="radio" name="mode" value="fum" id="modeFum" checked><span>Última regla (FUM)</span></label>
+          <label><input type="radio" name="mode" value="fpp" id="modeFpp"><span>Fecha probable de parto</span></label>
+        </div>
+        <div class="row">
+          <input type="date" id="dateInput" aria-label="Fecha" required>
+          <button class="btn" type="submit">Guardar</button>
+        </div>
+        <p class="err" id="dateErr" hidden></p>
+        <p class="hint">Si en la ecografía del primer trimestre te dieron otra fecha probable de parto, usa esa: es más precisa que la FUM. La fecha probable se calcula sumando 280 días (40 semanas) a la FUM.</p>
+      </form>
+    </details>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" id="tabbtn-ahora" aria-controls="tab-ahora" data-tab="ahora">Ahora</button>
+    <button role="tab" id="tabbtn-examenes" aria-controls="tab-examenes" data-tab="examenes">Exámenes</button>
+    <button role="tab" id="tabbtn-consulta" aria-controls="tab-consulta" data-tab="consulta">Mi consulta</button>
+    <button role="tab" id="tabbtn-alarma" aria-controls="tab-alarma" data-tab="alarma" class="alarm">Señales de alarma</button>
+  </nav>
+
+  <main>
+    <section class="panel" id="tab-ahora" role="tabpanel" aria-labelledby="tabbtn-ahora"></section>
+    <section class="panel" id="tab-examenes" role="tabpanel" aria-labelledby="tabbtn-examenes" hidden></section>
+    <section class="panel" id="tab-consulta" role="tabpanel" aria-labelledby="tabbtn-consulta" hidden></section>
+    <section class="panel" id="tab-alarma" role="tabpanel" aria-labelledby="tabbtn-alarma" hidden>
+      <div class="alarm-box">
+        <h2>No esperes a tu próxima cita</h2>
+        <p>Si tienes cualquiera de estas señales, llama a tu centro de salud o ve a urgencias de maternidad ese mismo día, aunque sea de noche o fin de semana.</p>
+        <ul class="alarm-list">
+          <li><b>Sangrado por la vagina</b><span>Cualquier cantidad, en cualquier trimestre.</span></li>
+          <li><b>Pérdida de líquido</b><span>Líquido claro o verdoso que moja tu ropa interior, aunque no duela.</span></li>
+          <li><b>Contracciones o dolor de vientre fuerte antes de la semana 37</b><span>Endurecimiento regular del vientre, cólicos que no ceden, presión en la pelvis.</span></li>
+          <li><b>Dolor de cabeza fuerte, visión borrosa o "lucecitas"</b><span>Sobre todo con dolor en la boca del estómago. Pueden ser signos de preeclampsia.</span></li>
+          <li><b>Hinchazón repentina de cara, manos o piernas</b><span>Distinta a la hinchazón leve de los pies al final del día.</span></li>
+          <li><b>Fiebre de 38 °C o más</b><span>O escalofríos, ardor al orinar, flujo con mal olor.</span></li>
+          <li><b>El bebé se mueve menos o deja de moverse</b><span>Desde la semana 28 aprox. No esperes al día siguiente para consultar.</span></li>
+          <li><b>Vómitos que no te dejan comer ni beber</b><span>Si no retienes líquidos por más de un día o orinas muy poco.</span></li>
+          <li><b>Falta de aire, dolor en el pecho o en una pierna</b><span>Dolor e hinchazón de una sola pantorrilla también es urgente.</span></li>
+          <li><b>Tristeza profunda, angustia o pensamientos de hacerte daño</b><span>Tu salud mental es parte del control prenatal. Pide ayuda hoy mismo.</span></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Nueve Lunas es una guía basada en las recomendaciones de la OMS para el control prenatal y en guías clínicas de uso común en Latinoamérica. Los exámenes y las semanas exactas varían según el país y según tu historia. Fuentes principales: recomendaciones de la OMS sobre atención prenatal (2016) y posnatal (2022), guías del ACOG y protocolos ministeriales de la región. No reemplaza a tu equipo de salud: úsala para preguntar, pedir y entender.
+  </footer>
+</div>
+
+<script>
+const EXAMS = [
+  // Primer trimestre
+  { id: "eco_t1", t: 1, name: "Ecografía del primer trimestre", from: 6, to: 10, prep: "Suele ser transvaginal: no necesitas preparación especial.", why: "Confirma que el embarazo está dentro del útero, que hay latido, cuántos bebés hay y fija la edad gestacional exacta. Todo el calendario de exámenes depende de esta fecha." },
+  { id: "hemograma1", t: 1, name: "Hemograma completo", from: 4, to: 13, why: "Mide hemoglobina, glóbulos blancos y plaquetas. Detecta anemia, que es muy común en el embarazo y se trata con hierro." },
+  { id: "grupo_rh", t: 1, name: "Grupo sanguíneo, factor Rh y Coombs indirecto", from: 4, to: 13, why: "Si eres Rh negativo, tu cuerpo podría producir anticuerpos contra el bebé. Se previene con una inyección (inmunoglobulina anti-D) cerca de la semana 28 y después del parto." },
+  { id: "glucemia", t: 1, name: "Glucosa en ayunas", from: 4, to: 13, prep: "8 horas de ayuno.", why: "Busca diabetes que ya existía antes del embarazo. Si sale 92 mg/dL o más, ya se considera diabetes gestacional y no hace falta esperar a la curva." },
+  { id: "orina1", t: 1, name: "Orina completa y urocultivo", from: 4, to: 13, prep: "Primera orina de la mañana, con aseo previo y tomando el chorro del medio.", why: "Detecta infecciones urinarias sin síntomas (bacteriuria asintomática). Sin tratamiento pueden llegar al riñón y aumentan el riesgo de parto prematuro." },
+  { id: "vih1", t: 1, name: "VIH", from: 4, to: 13, why: "Con tratamiento a tiempo, el riesgo de transmisión al bebé baja a menos del 1 %." },
+  { id: "sifilis1", t: 1, name: "Sífilis (VDRL o RPR)", from: 4, to: 13, why: "La sífilis se trata con penicilina y así se evita la sífilis congénita. Es un examen que nunca debería faltar." },
+  { id: "hepb", t: 1, name: "Hepatitis B (HBsAg)", from: 4, to: 13, why: "Si sale positivo, el bebé recibe vacuna e inmunoglobulina en las primeras 12 horas de vida para protegerlo." },
+  { id: "hepc", t: 1, name: "Hepatitis C", from: 4, to: 13, why: "Varias guías ya lo recomiendan en todos los embarazos. Pregunta si en tu país está incluido." },
+  { id: "toxo", t: 1, name: "Toxoplasmosis (IgG e IgM)", from: 4, to: 13, why: "Si tu IgG es negativa no tienes defensas: te explicarán cómo prevenirla (carne bien cocida, lavar frutas y verduras, guantes para jardinería, evitar la arena de gatos) y se repite en cada trimestre." },
+  { id: "rubeola", t: 1, name: "Rubéola (IgG)", from: 4, to: 13, why: "Sabrás si estás protegida. Si no lo estás, te vacunan después del parto (no durante el embarazo)." },
+  { id: "chagas", t: 1, name: "Chagas", from: 4, to: 13, why: "Recomendado si naciste o viviste en zonas de Latinoamérica donde existe. Se puede transmitir al bebé, que se estudia y trata al nacer." },
+  { id: "tsh", t: 1, name: "Tiroides (TSH)", from: 4, to: 13, why: "La tiroides influye en el desarrollo del cerebro del bebé. No todos los sistemas lo piden de rutina: pregunta, sobre todo si tienes antecedentes." },
+  { id: "salud_mental", t: 1, name: "Tamizaje de salud mental (depresión y ansiedad)", from: 4, to: 13, why: "Un cuestionario breve (por ejemplo, la escala de Edimburgo) que debería repetirse en el embarazo y después del parto. La depresión perinatal es frecuente y tiene tratamiento." },
+  { id: "pap", t: 1, name: "Papanicolaou (si no está al día)", from: 4, to: 20, why: "Se puede tomar de forma segura en el embarazo si te toca según tu calendario." },
+  { id: "dental", t: 1, name: "Control odontológico", from: 4, to: 27, why: "Las encías inflamadas son frecuentes en el embarazo y la enfermedad de las encías se ha asociado a parto prematuro. El tratamiento dental es seguro." },
+  { id: "eco_1114", t: 1, name: "Ecografía 11 a 13+6 semanas (translucencia nucal)", from: 11, to: 13, prep: "Si es abdominal, ir con la vejiga moderadamente llena.", why: "Confirma la edad gestacional, mide la translucencia nucal para el tamizaje de alteraciones cromosómicas y revisa la anatomía temprana. Solo se puede hacer en esta ventana: si se pasa, no se recupera." },
+  { id: "preeclampsia", t: 1, name: "Evaluación del riesgo de preeclampsia", from: 11, to: 15, why: "Con tu historia, tu presión y (si está disponible) el Doppler de arterias uterinas en la ecografía 11–14, se decide si te conviene aspirina en dosis baja. Debe empezarse antes de la semana 16 para que funcione." },
+  // Segundo trimestre
+  { id: "eco_morfo", t: 2, name: "Ecografía morfológica (nivel II)", from: 18, to: 24, prep: "Sin preparación especial. Puede durar 30 a 60 minutos.", why: "Revisa órgano por órgano: cerebro, corazón, columna, riñones, extremidades y cara, además de la placenta, el cordón y el líquido amniótico. Idealmente entre las semanas 20 y 22. Pregunta si te miden el largo del cuello del útero (cervicometría)." },
+  { id: "ptog", t: 2, name: "Curva de tolerancia a la glucosa (PTOG 75 g)", from: 24, to: 28, prep: "8 horas de ayuno, sin fumar ni caminar mucho durante la prueba. Calcula unas 2 horas y media en el laboratorio.", why: "Detecta diabetes gestacional, que sin tratamiento puede hacer que el bebé crezca demasiado y complique el parto. Valores normales: en ayunas menos de 92, a la hora menos de 180 y a las 2 horas menos de 153 mg/dL. Un solo valor alterado ya hace el diagnóstico." },
+  { id: "hemograma2", t: 2, name: "Hemograma (2.º control)", from: 20, to: 28, why: "Vuelve a revisar la anemia, que suele aumentar en esta etapa por la dilución normal de la sangre, para ajustar el hierro." },
+  { id: "vih_sif2", t: 2, name: "VIH y sífilis (2.º control)", from: 24, to: 28, why: "Muchos protocolos de la región los repiten en cada trimestre porque una infección nueva puede aparecer durante el embarazo." },
+  { id: "toxo2", t: 2, name: "Toxoplasmosis (repetición)", from: 20, to: 28, cond: "Solo si tu IgG fue negativa", why: "Si no tenías defensas, se repite para detectar una infección nueva a tiempo y tratarla. Si ya tenías IgG positiva, márcalo como \"no me corresponde\"." },
+  { id: "anti_d", t: 2, name: "Coombs indirecto e inmunoglobulina anti-D", from: 27, to: 29, cond: "Solo si eres Rh negativo", why: "Protege a este bebé y a tus futuros embarazos. Si eres Rh positivo, márcalo como \"no me corresponde\"." },
+  { id: "dtpa", t: 2, name: "Vacuna dTpa (tos convulsa)", from: 20, to: 36, why: "Pasa defensas al bebé contra la tos convulsa para sus primeros meses. Lo ideal es entre las semanas 27 y 36, en cada embarazo." },
+  { id: "influenza", t: 2, name: "Vacuna de la influenza", from: 4, to: 40, why: "Se puede aplicar en cualquier trimestre durante la temporada de gripe y protege también al bebé." },
+  // Tercer trimestre
+  { id: "eco_crec", t: 3, name: "Ecografía de crecimiento", from: 32, to: 36, why: "Mide la velocidad de crecimiento, estima el peso al nacer, revisa el líquido amniótico, la placenta y la posición del bebé. Si hay dudas, se agrega Doppler." },
+  { id: "hemograma3", t: 3, name: "Hemograma (3.er control)", from: 32, to: 36, why: "Llegar al parto sin anemia y con plaquetas normales reduce los riesgos si hay sangrado y es necesario para la anestesia." },
+  { id: "serologia3", t: 3, name: "VIH, sífilis y hepatitis B (cierre antes del parto)", from: 32, to: 36, why: "Última actualización antes del parto. El equipo de neonatología necesita estos resultados para recibir al bebé." },
+  { id: "toxo3", t: 3, name: "Toxoplasmosis (repetición)", from: 32, to: 36, cond: "Solo si tu IgG fue negativa", why: "Último control para quienes no tienen defensas." },
+  { id: "vrs", t: 3, name: "Vacuna VRS (virus respiratorio sincicial)", from: 32, to: 36, why: "Protege al bebé de la bronquiolitis. Su disponibilidad depende del país; pregunta si está en tu calendario." },
+  { id: "sgb", t: 3, name: "Cultivo de estreptococo grupo B (hisopado)", from: 35, to: 37, prep: "No uses óvulos, cremas ni duchas vaginales en los días previos.", why: "Una muestra vaginal y rectal. Si sale positivo, recibes antibiótico durante el parto para evitar una infección grave en el recién nacido." },
+  { id: "prequirurgico", t: 3, name: "Coagulograma y electrocardiograma (prequirúrgicos)", from: 35, to: 38, cond: "Según tu maternidad", why: "Muchas maternidades los piden antes de una cesárea o la anestesia epidural. Pregunta si tu centro los exige para llevarlos listos." },
+  { id: "monitoreo", t: 3, name: "Monitoreo fetal (registro de latidos)", from: 38, to: 41, why: "Se hace al acercarse o pasar la fecha probable de parto, o antes si hay algún riesgo." },
+  // Después del parto
+  { id: "anti_d_post", t: 4, post: true, name: "Anti-D después del parto", cond: "Solo si eres Rh negativo y tu bebé Rh positivo", why: "Se aplica dentro de las 72 horas después del parto para proteger tus futuros embarazos." },
+  { id: "rn_talon", t: 4, post: true, name: "Prueba del talón del bebé (pesquisa neonatal)", why: "Detecta enfermedades metabólicas y de tiroides que, tratadas a tiempo, no dejan secuelas. Se toma después de las 48 horas de vida y antes de los 7 días." },
+  { id: "rn_vacunas", t: 4, post: true, name: "Vitamina K y vacunas del bebé al nacer", why: "Vitamina K para prevenir sangrados, vacuna de la hepatitis B en las primeras 12 horas y BCG según tu país. Revisa que queden anotadas en su carnet." },
+  { id: "rn_audicion", t: 4, post: true, name: "Pruebas de audición y oximetría del bebé", why: "La prueba de audición (otoemisiones) y la oximetría de pulso para detectar cardiopatías se hacen antes del alta." },
+  { id: "post_1", t: 4, post: true, name: "Control de la madre a la semana del parto", why: "Revisión de presión, sangrado, herida (si hubo cesárea o episiotomía), mamas y lactancia, y de cómo te sientes de ánimo. La OMS recomienda controles a los 3 días, entre 1 y 2 semanas y a las 6 semanas." },
+  { id: "post_6", t: 4, post: true, name: "Control de la madre a las 6 semanas", why: "Cierre del puerperio: anticoncepción, salud mental, curva de glucosa si tuviste diabetes gestacional, vacuna de rubéola si no tenías defensas y Papanicolaou si te toca." }
+];
+
+const QUESTIONS = {
+  1: [
+    "¿Cuál es mi fecha probable de parto y cómo la calcularon?",
+    "¿Mi embarazo es de bajo o de alto riesgo? ¿Por qué?",
+    "¿Qué exámenes me tocan ahora, cuándo están los resultados y quién me los explica?",
+    "¿Debo tomar ácido fólico, hierro, yodo, calcio u otro suplemento? ¿En qué dosis?",
+    "¿Los medicamentos que tomo (incluidos naturales) son seguros en el embarazo?",
+    "¿Cuánto peso es sano que aumente según mi peso actual?",
+    "¿Qué alimentos debo evitar por la toxoplasmosis y la listeria?",
+    "¿Puedo seguir haciendo ejercicio, trabajando y teniendo relaciones?",
+    "¿Qué hago con las náuseas? ¿Cuándo son motivo de consulta?",
+    "¿Me corresponde aspirina en dosis baja para prevenir la preeclampsia?",
+    "¿Cada cuánto serán mis controles y quién me atenderá?",
+    "¿A dónde voy o a quién llamo si tengo sangrado o dolor fuera del horario?"
+  ],
+  2: [
+    "¿Qué mostró la ecografía morfológica? ¿Cómo están la placenta y el cuello del útero?",
+    "¿Cuándo y cómo me hago la curva de glucosa? ¿Debo ir en ayunas?",
+    "¿Cómo van mi presión y mi aumento de peso?",
+    "¿Cómo están mis niveles de hierro? ¿Sigo con el suplemento?",
+    "¿Qué vacunas me corresponden y dónde me las pongo?",
+    "Si soy Rh negativo, ¿cuándo me ponen la inmunoglobulina anti-D?",
+    "Si no tengo defensas para toxoplasmosis, ¿cuándo repito el examen?",
+    "¿Cuáles son los síntomas de un parto prematuro?",
+    "¿Cuándo debería sentir al bebé moverse todos los días?",
+    "¿Hay cursos de preparación para el parto donde me atiendo?",
+    "¿Qué permisos y licencias me corresponden en el trabajo?"
+  ],
+  3: [
+    "¿Cómo cuento los movimientos del bebé y cuándo debo consultar?",
+    "¿Cómo está creciendo el bebé y en qué posición está?",
+    "¿Cuándo me hacen el cultivo de estreptococo B?",
+    "¿Mi maternidad exige coagulograma, electrocardiograma o consulta con anestesia?",
+    "¿Cómo reconozco el trabajo de parto y cuándo debo ir a la maternidad?",
+    "¿Qué opciones tengo para el dolor (epidural u otras)?",
+    "¿En qué casos me indicarían una cesárea o una inducción?",
+    "¿Puedo estar acompañada durante el parto? ¿Por quién?",
+    "¿Qué pasa si llego a la semana 41 sin trabajo de parto?",
+    "¿Cómo hago mi plan de parto y quién lo revisa conmigo?",
+    "¿Dónde recibo apoyo para la lactancia?",
+    "¿Qué documentos y cosas llevo a la maternidad?"
+  ],
+  4: [
+    "¿Cuándo es mi control después del parto y el primer control del bebé?",
+    "¿Qué sangrado es normal y cuánto debería durar?",
+    "¿Qué método anticonceptivo me conviene si estoy amamantando?",
+    "¿Cuándo puedo volver a hacer ejercicio y a tener relaciones?",
+    "¿Dónde busco ayuda si me siento triste, ansiosa o sobrepasada?",
+    "¿Cuándo están los resultados de la prueba del talón?",
+    "¿Cuándo le tocan al bebé sus próximas vacunas?",
+    "Si tuve diabetes gestacional, ¿cuándo repito la curva de glucosa?"
+  ]
+};
+
+const TRI = {
+  1: { name: "Primer trimestre", range: "semanas 1 a 13", color: "var(--t1)" },
+  2: { name: "Segundo trimestre", range: "semanas 14 a 27", color: "var(--t2)" },
+  3: { name: "Tercer trimestre", range: "semanas 28 a 40+", color: "var(--t3)" },
+  4: { name: "Después del parto", range: "primeras 6 semanas", color: "var(--accent)" }
+};
+
+// Contactos recomendados por la OMS (2016): al menos 8
+const CONTACTS = [12, 20, 26, 30, 34, 36, 38, 40];
+
+const KEY = "nueve-lunas-v1";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const DAY = 864e5;
+
+function today() { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate(), 12); }
+function parseISO(s) { if (!/^\d{4}-\d{2}-\d{2}$/.test(s || "")) return null; const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d, 12); }
+function toISO(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function fmt(d) { return d.toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }); }
+function triOf(w) { return w < 14 ? 1 : w < 28 ? 2 : 3; }
+
+function blank() { return { v: 1, fum: null, exams: {}, asked: {}, mine: [] }; }
+function normalize(s) {
+  const b = blank();
+  if (!s || typeof s !== "object") return b;
+  return { v: 1, fum: parseISO(s.fum) ? s.fum : null, exams: s.exams && typeof s.exams === "object" ? s.exams : {}, asked: s.asked && typeof s.asked === "object" ? s.asked : {}, mine: Array.isArray(s.mine) ? s.mine.filter(m => m && m.t) : [] };
+}
+function makeExample() {
+  const t = today();
+  const ex = { v: 1, fum: toISO(addDays(t, -(22 * 7 + 3))), exams: {}, asked: {}, mine: [{ id: "m1", t: "¿Es normal que me duela la espalda baja por las noches?", done: false }] };
+  const doneIds = { eco_t1: 150, hemograma1: 140, grupo_rh: 140, orina1: 140, vih1: 140, sifilis1: 140, hepb: 140, toxo: 140, rubeola: 140, eco_1114: 115, preeclampsia: 115, salud_mental: 140, dental: 90 };
+  for (const [id, back] of Object.entries(doneIds)) ex.exams[id] = { done: true, date: toISO(addDays(t, -back)), note: id === "grupo_rh" ? "O positivo" : id === "toxo" ? "IgG negativa: no tengo defensas, cuidar alimentación" : "" };
+  ex.exams.chagas = { na: true };
+  ex.exams.anti_d = { na: true };
+  QUESTIONS[1].slice(0, 7).forEach((_, i) => ex.asked["1-" + i] = true);
+  ex.asked["2-0"] = true;
+  return ex;
+}
+
+let state = blank();
+try { const raw = localStorage.getItem(KEY); if (raw) state = normalize(JSON.parse(raw)); } catch (e) {}
+let exampleState = makeExample();
+let backend = "local", docRef = null, saveTimer = null, chain = Promise.resolve();
+const isExample = () => !state.fum;
+const cur = () => isExample() ? exampleState : state;
+
+const ui = { tab: "ahora", triFilter: null, qTri: null, open: new Set() };
+try { const t = localStorage.getItem(KEY + "-tab"); if (t) ui.tab = t; } catch (e) {}
+if (/^#(ahora|examenes|consulta|alarma)$/.test(location.hash)) ui.tab = location.hash.slice(1);
+
+function gest() {
+  const fum = parseISO(cur().fum);
+  const days = Math.max(0, Math.round((today() - fum) / DAY));
+  const w = Math.floor(days / 7), d = days % 7;
+  return { fum, days, w, d, wf: days / 7, tri: triOf(w), fpp: addDays(fum, 280) };
+}
+
+function status(ex, wf, rec) {
+  if (rec?.na) return "na";
+  if (rec?.done) return "done";
+  if (ex.post) return wf >= 40 ? "now" : "later";
+  if (wf >= ex.to + 1) return "late";
+  if (wf >= ex.from) return "now";
+  if (ex.from - wf <= 4) return "soon";
+  return "later";
+}
+const ST_LABEL = { now: "Te toca ahora", late: "Pendiente", soon: "Se acerca", later: "Más adelante", done: "Hecho", na: "No me corresponde" };
+
+function setSaveLabel() {
+  const el = $("#saveLabel");
+  if (isExample()) { el.dataset.k = "example"; el.textContent = "Modo ejemplo · no se guarda"; }
+  else if (backend === "cloud") { el.dataset.k = "cloud"; el.textContent = "Guardado en tu cuenta"; }
+  else { el.dataset.k = "local"; el.textContent = "Guardado solo en este dispositivo"; }
+}
+
+function persist() {
+  if (isExample()) return;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  if (backend === "cloud" && docRef) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const body = JSON.parse(JSON.stringify(state));
+      chain = chain.then(() => docRef.set(body)).catch(() => { backend = "local"; setSaveLabel(); });
+    }, 700);
+  }
+  setSaveLabel();
+}
+
+async function initCloud() {
+  if (!window.claude?.use) return;
+  try {
+    const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+    if (!db || !user) return;
+    const uid = await user.id();
+    if (!uid) return;
+    docRef = db.doc("data/users/" + uid + "/plan");
+    const snap = await docRef.get();
+    backend = "cloud";
+    if (snap.exists) { state = normalize(JSON.parse(JSON.stringify(snap.data()))); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    else if (state.fum) persist();
+    render();
+  } catch (e) { backend = "local"; setSaveLabel(); }
+}
+
+function recOf(id) { return cur().exams[id] || {}; }
+function setRec(id, patch) {
+  const s = cur();
+  s.exams[id] = Object.assign({}, s.exams[id], patch);
+  persist();
+}
+
+function examRow(ex, ctx, g) {
+  const rec = recOf(ex.id), st = status(ex, g.wf, rec);
+  const key = ctx + ":" + ex.id;
+  return `<div class="item is-${st}" data-exam="${ex.id}">
+    <div class="item-head">
+      <input type="checkbox" id="${ctx}-chk-${ex.id}" data-act="done" ${rec.done ? "checked" : ""} ${rec.na ? "disabled" : ""}>
+      <label class="item-title" for="${ctx}-chk-${ex.id}">${esc(ex.name)}</label>
+    </div>
+    <div class="tags">
+      <span class="pill st-${st}">${ST_LABEL[st]}</span>
+      <span class="win">${ex.post ? "después del parto" : `sem ${ex.from}–${ex.to}`}</span>
+      ${ex.cond ? `<span class="win">· ${esc(ex.cond)}</span>` : ""}
+    </div>
+    <details class="more" data-key="${key}" ${ui.open.has(key) ? "open" : ""}>
+      <summary>Para qué sirve y mi resultado</summary>
+      <div class="more-body">
+        <p class="why">${esc(ex.why)}</p>
+        ${ex.prep ? `<p><b>Cómo prepararte:</b> ${esc(ex.prep)}</p>` : ""}
+        <div class="fields">
+          <label>Fecha en que lo hice<input type="date" id="${ctx}-date-${ex.id}" data-act="date" value="${esc(rec.date || "")}"></label>
+          <label>Resultado o nota<input type="text" id="${ctx}-note-${ex.id}" data-act="note" value="${esc(rec.note || "")}" placeholder="Ej.: normal, me pidieron repetirlo…"></label>
+        </div>
+        <div><button type="button" class="linkbtn" data-act="na">${rec.na ? "Sí me corresponde" : "No me corresponde"}</button></div>
+      </div>
+    </details>
+  </div>`;
+}
+
+function renderHero(g) {
+  const tri = TRI[g.tri];
+  $("#hero").style.setProperty("--tri", tri.color);
+  $("#triLabel").textContent = tri.name + " · " + tri.range;
+  $("#weekBig").innerHTML = `Semana ${g.w}<small> + ${g.d} ${g.d === 1 ? "día" : "días"}</small>`;
+  const left = 280 - g.days;
+  $("#heroMeta").innerHTML = `<span>Fecha probable de parto: <b>${fmt(g.fpp)}</b></span><span>${left > 0 ? `Faltan <b>${Math.floor(left / 7)} semanas y ${left % 7} días</b>` : `<b>Ya pasaste tu fecha probable</b>`}</span>`;
+  const bands = [[1, 14], [2, 14], [3, 14]];
+  $("#tlBar").innerHTML = bands.map(([t, n]) => `<span class="${t === g.tri ? "on" : ""}" style="flex:${n};background:${TRI[t].color}"></span>`).join("");
+  const pct = Math.min(100, (g.wf / 42) * 100);
+  $("#tlNow").style.left = pct + "%";
+  $("#tlNow").textContent = g.w + "+" + g.d;
+  $("#exampleBanner").hidden = !isExample();
+  if (!isExample()) $("#dateInput").value = $("#modeFpp").checked ? toISO(g.fpp) : cur().fum;
+}
+
+function renderAhora(g) {
+  const s = cur();
+  const now = [], late = [], soon = [];
+  for (const ex of EXAMS) {
+    const st = status(ex, g.wf, s.exams[ex.id]);
+    if (st === "now") now.push(ex); else if (st === "late") late.push(ex); else if (st === "soon") soon.push(ex);
+  }
+  const done = EXAMS.filter(e => s.exams[e.id]?.done).length;
+  const applicable = EXAMS.filter(e => !s.exams[e.id]?.na).length;
+  const qs = QUESTIONS[g.tri];
+  const qPending = qs.filter((_, i) => !s.asked[g.tri + "-" + i]).length + s.mine.filter(m => !m.done).length;
+  const list = (arr, ctx, emptyMsg) => arr.length ? `<div class="list">${arr.map(e => examRow(e, ctx, g)).join("")}</div>` : `<p class="empty">${emptyMsg}</p>`;
+  $("#tab-ahora").innerHTML = `
+    <div class="stats">
+      <div class="stat"><b>${done}/${applicable}</b><span>exámenes hechos</span></div>
+      <div class="stat"><b>${late.length}</b><span>pendientes de semanas anteriores</span></div>
+      <div class="stat"><b>${qPending}</b><span>preguntas para tu próxima consulta</span></div>
+    </div>
+    ${contactsBlock(g)}
+    <div class="block">
+      <h2>Te toca ahora</h2>
+      <p class="sub">Exámenes cuya ventana recomendada incluye tu semana ${g.w}. Si nadie te los ha pedido, pídelos en tu próxima consulta.</p>
+      ${list(now, "now", "No hay exámenes en ventana esta semana. Revisa los que se acercan.")}
+    </div>
+    ${late.length ? `<div class="block">
+      <h2>Quedaron pendientes</h2>
+      <p class="sub">Su ventana ya pasó. Algunos todavía se pueden hacer, otros no: pregunta en tu próxima consulta qué hacer con cada uno. Si ya te los hiciste, márcalos.</p>
+      ${list(late, "late", "")}
+    </div>` : ""}
+    <div class="block">
+      <h2>Se acercan</h2>
+      <p class="sub">Próximas 4 semanas. Agenda con tiempo: algunos solo se pueden hacer en una ventana corta.</p>
+      ${list(soon, "soon", "Nada nuevo en las próximas 4 semanas.")}
+    </div>
+    <div class="block">
+      <button type="button" class="btn ghost" data-goto="consulta">Preparar mi próxima consulta</button>
+    </div>`;
+}
+
+function contactsBlock(g) {
+  const next = CONTACTS.find(w => w > g.wf);
+  const nextTxt = next ? `Tu próximo control recomendado es cerca de la <b>semana ${next}</b> (${fmt(addDays(g.fum, next * 7))}).` : "Ya completaste el calendario de controles. Si pasas la semana 41, tu equipo debería verte cada pocos días.";
+  return `<div class="block">
+    <h2>Tus controles</h2>
+    <p class="sub">La OMS recomienda al menos 8 contactos con tu equipo de salud. ${nextTxt}</p>
+    <div class="chips" aria-label="Semanas de control recomendadas">${CONTACTS.map(w => `<span class="contact ${w < g.wf ? "past" : w === next ? "next" : ""}">sem ${w}</span>`).join("")}</div>
+  </div>`;
+}
+
+function renderExamenes(g) {
+  const tf = ui.triFilter ?? g.tri;
+  const exs = EXAMS.filter(e => tf === 0 || e.t === tf);
+  const groups = tf === 0 ? [1, 2, 3, 4] : [tf];
+  $("#tab-examenes").innerHTML = `
+    <div class="block">
+      <h2>Exámenes infaltables</h2>
+      <p class="sub">Marca cada examen cuando lo hagas y anota el resultado. Así llegas a cada consulta sabiendo qué falta.</p>
+      <div class="chips" role="group" aria-label="Filtrar por trimestre">
+        ${[1, 2, 3, 4].map(t => `<button type="button" data-tri="${t}" aria-pressed="${tf === t}" style="--tri:${TRI[t].color}">${TRI[t].name}</button>`).join("")}
+        <button type="button" data-tri="0" aria-pressed="${tf === 0}" style="--tri:var(--accent)">Todos</button>
+      </div>
+    </div>
+    ${groups.map(t => {
+      const items = exs.filter(e => e.t === t);
+      const d = items.filter(e => cur().exams[e.id]?.done).length;
+      return `<div class="block" style="--tri:${TRI[t].color}">
+        <div class="tri-h"><h3>${TRI[t].name}</h3><span>${TRI[t].range} · ${d} de ${items.length} hechos</span></div>
+        <div class="list">${items.map(e => examRow(e, "all", g)).join("")}</div>
+      </div>`;
+    }).join("")}`;
+}
+
+function renderConsulta(g) {
+  const s = cur();
+  const qt = ui.qTri ?? g.tri;
+  const qs = QUESTIONS[qt];
+  $("#tab-consulta").innerHTML = `
+    <div class="block">
+      <h2>Qué preguntar en tu consulta</h2>
+      <p class="sub">Marca lo que ya preguntaste. Lo que quede sin marcar va a tu lista para la próxima cita.</p>
+      <div class="chips" role="group" aria-label="Trimestre">
+        ${[1, 2, 3, 4].map(t => `<button type="button" data-qtri="${t}" aria-pressed="${qt === t}" style="--tri:${TRI[t].color}">${TRI[t].name}${t === g.tri ? " (ahora)" : ""}</button>`).join("")}
+      </div>
+      <div class="list">${qs.map((q, i) => {
+        const k = qt + "-" + i;
+        return `<div class="item ${s.asked[k] ? "is-done" : ""}"><div class="item-head">
+          <input type="checkbox" id="q-${k}" data-q="${k}" ${s.asked[k] ? "checked" : ""}>
+          <label class="item-title" for="q-${k}">${esc(q)}</label></div></div>`;
+      }).join("")}</div>
+    </div>
+    <div class="block">
+      <h2>Mis propias preguntas</h2>
+      <p class="sub">Anota dudas apenas aparezcan. En la consulta es fácil olvidarlas.</p>
+      <form class="addq" id="addQ"><input type="text" id="newQ" placeholder="Escribe una duda…" aria-label="Nueva pregunta" maxlength="300"><button class="btn" type="submit">Agregar</button></form>
+      ${s.mine.length ? `<div class="list">${s.mine.map(m => `<div class="item ${m.done ? "is-done" : ""}"><div class="item-head">
+        <input type="checkbox" id="mine-${esc(m.id)}" data-mine="${esc(m.id)}" ${m.done ? "checked" : ""}>
+        <label class="item-title" for="mine-${esc(m.id)}">${esc(m.t)}</label>
+        <button type="button" class="del" data-del="${esc(m.id)}" aria-label="Borrar pregunta">×</button></div></div>`).join("")}</div>` : `<p class="empty">Todavía no agregaste preguntas.</p>`}
+    </div>
+    <div class="box">
+      <b>En cada control deberían…</b>
+      <ul>
+        <li>Tomarte la presión arterial y pesarte.</li>
+        <li>Escuchar los latidos del bebé (desde la semana 12 aprox.).</li>
+        <li>Medir la altura del útero (desde la semana 20 aprox.).</li>
+        <li>Preguntarte por los movimientos del bebé, sangrados, dolores y cómo te sientes de ánimo.</li>
+        <li>Revisar contigo los resultados de tus exámenes y decirte cuáles siguen.</li>
+      </ul>
+      <p class="hint">Si alguna de estas cosas no ocurre, puedes pedirla. Es tu derecho.</p>
+    </div>
+    <div class="block">
+      <h2>Llevar a la consulta</h2>
+      <p class="sub">Arma un resumen con tu semana, los exámenes que faltan y tus preguntas sin responder. Cópialo al celular o muéstraselo a quien te atienda.</p>
+      <div class="row"><button type="button" class="btn" id="copyBtn">Copiar resumen</button><span class="hint" id="copyMsg" role="status"></span></div>
+      <textarea class="copyout" id="copyOut" readonly hidden aria-label="Resumen para la consulta"></textarea>
+    </div>`;
+}
+
+function summaryText() {
+  const g = gest(), s = cur();
+  const pend = EXAMS.filter(e => ["now", "late"].includes(status(e, g.wf, s.exams[e.id])));
+  const qs = QUESTIONS[g.tri].filter((_, i) => !s.asked[g.tri + "-" + i]);
+  const mine = s.mine.filter(m => !m.done).map(m => m.t);
+  const lines = [
+    "MI CONSULTA PRENATAL · " + fmt(today()),
+    `Semana ${g.w}+${g.d} · ${TRI[g.tri].name} · Fecha probable de parto: ${fmt(g.fpp)}`,
+    "",
+    "Exámenes que me faltan:",
+    ...(pend.length ? pend.map(e => `- ${e.name} (sem ${e.from}–${e.to})`) : ["- Ninguno por ahora"]),
+    "",
+    "Preguntas:",
+    ...[...mine, ...qs].map(q => "- " + q)
+  ];
+  return lines.join("\n");
+}
+
+function render() {
+  const g = gest();
+  renderHero(g);
+  renderAhora(g);
+  renderExamenes(g);
+  renderConsulta(g);
+  setTab(ui.tab, false);
+  setSaveLabel();
+}
+
+function setTab(t, remember = true) {
+  ui.tab = t;
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  document.querySelectorAll("main > .panel").forEach(p => p.hidden = p.id !== "tab-" + t);
+  if (remember) try { localStorage.setItem(KEY + "-tab", t); } catch (e) {}
+}
+
+// Eventos
+document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (b) setTab(b.dataset.tab); });
+
+document.querySelector("main").addEventListener("change", e => {
+  const el = e.target;
+  const row = el.closest("[data-exam]");
+  if (row && el.dataset.act === "done") { setRec(row.dataset.exam, { done: el.checked, date: el.checked && !recOf(row.dataset.exam).date ? toISO(today()) : recOf(row.dataset.exam).date }); render(); return; }
+  if (row && el.dataset.act === "date") { setRec(row.dataset.exam, { date: el.value }); return; }
+  if (el.dataset.q) { const s = cur(); if (el.checked) s.asked[el.dataset.q] = true; else delete s.asked[el.dataset.q]; persist(); render(); return; }
+  if (el.dataset.mine) { const m = cur().mine.find(x => x.id === el.dataset.mine); if (m) { m.done = el.checked; persist(); render(); } }
+});
+document.querySelector("main").addEventListener("input", e => {
+  const el = e.target, row = el.closest("[data-exam]");
+  if (row && el.dataset.act === "note") {
+    const s = cur(); s.exams[row.dataset.exam] = Object.assign({}, s.exams[row.dataset.exam], { note: el.value });
+    document.querySelectorAll(`[data-exam="${row.dataset.exam}"] [data-act="note"]`).forEach(o => { if (o !== el) o.value = el.value; });
+    persist();
+  }
+});
+document.querySelector("main").addEventListener("toggle", e => {
+  const d = e.target; if (!d.dataset?.key) return;
+  if (d.open) ui.open.add(d.dataset.key); else ui.open.delete(d.dataset.key);
+}, true);
+document.querySelector("main").addEventListener("click", async e => {
+  const el = e.target.closest("button"); if (!el) return;
+  if (el.dataset.act === "na") { const id = el.closest("[data-exam]").dataset.exam; const na = !recOf(id).na; setRec(id, { na, done: na ? false : recOf(id).done }); render(); }
+  else if (el.dataset.tri) { ui.triFilter = Number(el.dataset.tri); renderExamenes(gest()); }
+  else if (el.dataset.qtri) { ui.qTri = Number(el.dataset.qtri); renderConsulta(gest()); }
+  else if (el.dataset.del) { const s = cur(); s.mine = s.mine.filter(m => m.id !== el.dataset.del); persist(); render(); }
+  else if (el.dataset.goto) { setTab(el.dataset.goto); document.querySelector(".tabs").scrollIntoView({ block: "start" }); }
+  else if (el.id === "copyBtn") {
+    const txt = summaryText(), out = $("#copyOut"), msg = $("#copyMsg");
+    out.value = txt; out.hidden = false;
+    try { await navigator.clipboard.writeText(txt); msg.textContent = "Copiado. Pégalo en tus notas o WhatsApp."; }
+    catch (err) { out.focus(); out.select(); msg.textContent = "No se pudo copiar automáticamente: el texto está seleccionado abajo, cópialo manualmente."; }
+  }
+});
+document.querySelector("main").addEventListener("submit", e => {
+  if (e.target.id !== "addQ") return;
+  e.preventDefault();
+  const v = $("#newQ").value.trim(); if (!v) return;
+  cur().mine.push({ id: "m" + Date.now().toString(36), t: v, done: false });
+  persist(); render();
+  setTimeout(() => $("#newQ")?.focus(), 0);
+});
+
+$("#startBtn").addEventListener("click", () => { $("#dataPanel").open = true; $("#dateInput").value = ""; $("#dateInput").focus(); });
+document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", () => {
+  if (!isExample()) $("#dateInput").value = $("#modeFpp").checked ? toISO(gest().fpp) : state.fum;
+}));
+$("#dateForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const err = $("#dateErr"); err.hidden = true;
+  const d = parseISO($("#dateInput").value);
+  if (!d) { err.textContent = "Elige una fecha en el calendario."; err.hidden = false; return; }
+  const fum = $("#modeFpp").checked ? addDays(d, -280) : d;
+  const days = Math.round((today() - fum) / DAY);
+  if (days < 14) { err.textContent = $("#modeFpp").checked ? "Esa fecha probable de parto está demasiado lejos. Revisa el año." : "La fecha de tu última regla no puede ser futura ni de hace menos de 2 semanas."; err.hidden = false; return; }
+  if (days > 44 * 7) { err.textContent = "Con esa fecha estarías en más de 44 semanas. Revisa el día y el año."; err.hidden = false; return; }
+  const wasExample = isExample();
+  state.fum = toISO(fum);
+  persist();
+  render();
+  if (wasExample) { setTab("ahora"); }
+  $("#dataPanel").open = false;
+});
+
+render();
+initCloud();
+</script>
+
+</body>
+</html>
